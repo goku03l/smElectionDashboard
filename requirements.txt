@@ -5,4 +5,5 @@ plotly
 faiss-cpu
 sentence-transformers
 openai
+openpyxl
 
