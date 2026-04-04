@@ -11,7 +11,7 @@ from density_plot1 import generate_density_plot
 from map_plot import generate_interactive_map
 
 # =========================
-# CONFIG (ONLY ONCE)
+# CONFIG
 # =========================
 st.set_page_config(page_title="Sentiment Dashboard + Chatbot", layout="wide")
 
@@ -20,16 +20,9 @@ st.set_page_config(page_title="Sentiment Dashboard + Chatbot", layout="wide")
 # =========================
 desc = """📌 About This Dashboard
 
-This dashboard presents an analysis of political sentiment in Tamil Nadu based on data collected from Twitter/X. The dataset was obtained using the official X API (paid tier), capturing approximately 4,000 recent public posts.
+This dashboard presents an analysis of political sentiment in Tamil Nadu based on Twitter/X data.
 
-Each record includes tweet content, a unique tweet ID, sentiment classification, and geographic coordinates where available. The data was cleaned to remove duplicates and incomplete entries, ensuring only valid records with identifiable political targets and sentiment labels were retained.
-
-Sentiment is categorized into four classes: positive, negative, neutral, and mixed.
-
-Data collection was performed using the queries: ["TN Elections", "TN Polls"]. Since the X API prioritizes recent and relevant content for general queries, the dataset reflects current public discourse. However, it may still contain inherent platform-level or sampling biases typical of social media data.
-
-At the moment This Dashboard Includes:
-
+Includes:
 - Sentiment distribution
 - Party-wise breakdown
 - Geo visualization
@@ -40,16 +33,20 @@ st.title("📊 Tamil Nadu Political Sentiment Dashboard")
 st.markdown(desc)
 
 # =========================
-# LOAD DATA (SHARED)
+# LOAD DATA
 # =========================
 @st.cache_data
 def load_data():
     df = pd.read_excel("updated_with_coordinates.xlsx")
     df.columns = df.columns.str.strip().str.lower()
     df = df.dropna(subset=['text'])
+    df = df.reset_index(drop=True)
     return df
 
 df = load_data()
+
+# 🔐 LOCK DATA FOR CHATBOT (CRITICAL FIX)
+df_chat = df.copy()
 
 # =========================
 # VALIDATION
@@ -62,11 +59,11 @@ if missing_cols:
     st.stop()
 
 # =========================
-# PARTY FILTER
+# PARTY FILTER (UI ONLY)
 # =========================
 all_parties = sorted(df['target_party'].dropna().unique())
 
-_, default_top5 = generate_sentiment_plot(df)
+_, default_top5 = generate_sentiment_plot(df.copy())
 
 selected_parties = st.multiselect(
     "Select Parties",
@@ -87,18 +84,24 @@ metric = st.selectbox(
 )
 
 # =========================
+# CHART DATA (FILTERED COPY)
+# =========================
+df_filtered = df.copy()
+df_filtered = df_filtered[df_filtered["target_party"].isin(selected_parties)]
+
+# =========================
 # ROW 1 → CHARTS
 # =========================
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Sentiment Breakdown")
-    fig1, _ = generate_sentiment_plot(df, selected_parties)
+    fig1, _ = generate_sentiment_plot(df_filtered.copy(), selected_parties)
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
     st.subheader("Sentiment Distribution")
-    fig2 = generate_density_plot(df, selected_parties)
+    fig2 = generate_density_plot(df_filtered.copy(), selected_parties)
     st.plotly_chart(fig2, use_container_width=True)
 
 # =========================
@@ -107,7 +110,7 @@ with col2:
 st.subheader("📍 District Sentiment Map")
 
 fig = generate_interactive_map(
-    df,
+    df_filtered.copy(),
     geojson_path="TAMIL NADU_DISTRICTS.geojson",
     selected_parties=selected_parties,
     metric=metric
@@ -123,11 +126,10 @@ st.markdown("---")
 st.subheader("🧠 AI Tweet Assistant")
 
 # =========================
-# INIT MODELS (CACHE)
+# INIT MODELS
 # =========================
 @st.cache_resource
 def load_models():
-    
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     model = SentenceTransformer('all-MiniLM-L6-v2')
     return client, model
@@ -138,7 +140,7 @@ INDEX_FILE = "faiss_index.index"
 EMBED_FILE = "embeddings.npy"
 
 # =========================
-# BUILD / LOAD INDEX
+# BUILD / LOAD INDEX (ONLY ON df_chat)
 # =========================
 @st.cache_resource
 def get_index(texts):
@@ -162,21 +164,31 @@ def get_index(texts):
     st.success("Index ready!")
     return index, embeddings
 
-texts = df['text'].tolist()
+texts = df_chat['text'].tolist()
 index, embeddings = get_index(texts)
 
 # =========================
-# RETRIEVAL
+# SAFE RETRIEVAL (FIXED)
 # =========================
 def retrieve(query, k=15):
     query_vec = model.encode([query]).astype('float32')
     D, I = index.search(query_vec, k)
-    return df.iloc[I[0]]
+
+    # 🔒 CRITICAL FIX: validate indices
+    valid_indices = [i for i in I[0] if 0 <= i < len(df_chat)]
+
+    if not valid_indices:
+        return pd.DataFrame()
+
+    return df_chat.iloc[valid_indices]
 
 # =========================
-# GENERATE
+# GENERATE ANSWER
 # =========================
 def generate_answer(query, retrieved_df):
+
+    if retrieved_df.empty:
+        return "I couldn't find relevant tweets for that query."
 
     context = "\n".join(retrieved_df['text'].tolist())
 
@@ -203,7 +215,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # =========================
-# CHAT UI (CLEAN)
+# CHAT UI
 # =========================
 chat_container = st.container()
 
