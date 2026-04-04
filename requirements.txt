@@ -5,8 +5,4 @@ plotly
 faiss-cpu
 sentence-transformers
 openai
-geopandas==0.14.3
-shapely==2.0.1
-pyproj==3.6.1
-fiona==1.9.5
 
