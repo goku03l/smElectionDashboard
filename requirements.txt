@@ -5,3 +5,6 @@ plotly
 faiss-cpu
 sentence-transformers
 openai
+geopandas
+json
+
