@@ -31,7 +31,7 @@ This dashboard presents an analysis of political sentiment in Tamil Nadu based o
   Collected using the official X (Twitter) API (paid tier)
 
 - **Dataset Size:**  
-  Approximately 4,000 recent public posts
+  Approximately 4,000 recent public posts ( after data cleaning reduced to 3369 ).
 
 - **Sentiment Categories:**  
   - Positive  
