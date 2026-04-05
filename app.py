@@ -13,20 +13,45 @@ from map_plot import generate_interactive_map
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="Sentiment Dashboard + Chatbot", layout="wide")
+st.set_page_config(page_title="Social Media Election Analysis", layout="wide")
 
 # =========================
 # DESCRIPTION
 # =========================
-desc = """📌 About This Dashboard
+desc = """
+📌 **About This Dashboard**
 
-This dashboard presents an analysis of political sentiment in Tamil Nadu based on Twitter/X data.
+This dashboard presents an analysis of political sentiment in Tamil Nadu based on data collected from Twitter/X. The dataset reflects recent public discourse around elections and political activity, offering insights into how people are reacting online. While it provides a useful snapshot, it is important to note that social media data may include inherent platform and sampling biases.
 
-Includes:
-- Sentiment distribution
-- Party-wise breakdown
-- Geo visualization
-- AI-powered tweet chatbot (RAG)
+---
+
+🔍 **Key Details**
+
+- **Data Source:**  
+  Collected using the official X (Twitter) API (paid tier)
+
+- **Dataset Size:**  
+  Approximately 4,000 recent public posts
+
+- **Sentiment Categories:**  
+  - Positive  
+  - Negative  
+  - Neutral  
+  - Mixed  
+
+- **Search Queries Used:**  
+  - "TN Elections"  
+  - "TN Polls"  
+  
+- **Includes:**
+    - Sentiment distribution
+    - Party-wise breakdown
+    - Geo visualization
+    - AI-powered tweet chatbot (RAG)
+    
+- **Important Note:**  
+   - The X API prioritises recent and relevant content for general queries, so the dataset reflects current trends. However, it may still include biases typical of social media platforms.
+   - This project is done with the intention of learning and implementing something from scratch with no lying intention,this topic has been taken because Elections are most happening topic at the moment
 """
 
 st.title("📊 Tamil Nadu Political Sentiment Dashboard")
