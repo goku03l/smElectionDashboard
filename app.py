@@ -13,7 +13,7 @@ from map_plot import generate_interactive_map
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="Social Media Election Analysis", layout="wide")
+st.set_page_config(page_title="Social Media Election Analysis", page_icon="logo.jpeg",layout="wide")
 
 # =========================
 # DESCRIPTION
